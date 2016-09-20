@@ -39,12 +39,16 @@ Purpose:
 Parameters:
     I   StorageManager *pMgr	pointer,passed to smAlloc(), so it can allocate correct
     							space for new node on the heap
+
     I   short DataSize       	passed to smAlloc(), also use in knowing how much memory to 
     							copy from stack to the heap for node
+
     I   short shNodeType		used to set the node type in the newly alloc'd node
+
     I   char sbData             binary data in a character array, contians all data in node(on stack)
+
     I   SMResult *psmResult     pointer to error node , error mesg is set on this node
-    O   Passed out. Value is returned through this parameter.
+    
 Notes:
     very important: userData info is being copied from the stack to our 
     virtual heap

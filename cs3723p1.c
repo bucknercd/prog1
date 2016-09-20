@@ -79,15 +79,18 @@ void * smrcAllocate(
 /******************** smrcRemoveRef **********************************
 void smrcRemoveRef(StorageManager *pMgr, void *pUserData, SMResult *psmResult);
 Purpose:
-    
+	lower the reference count of a particular node; if ref count reaches zero
+	adjust previous associations
 Parameters:
 	I   StorageManager *pMgr	pointer, used to access metadata to loop thru
 								different attributes; also passed to smFree()
 								for error purposes (our virtual heap boundaries)
+
 	I   void *pUserData 		pointer to the userData section of the node;
 								passed to smFree so smFree knows what addr to free,
 								also used to calculate our attr offsets, and to know 
 								where to make an AllocNode pointer point to
+
 	I   SMResult *psmResult		pointer to error struct, an error message may be set
 								in this struct
 Notes:
@@ -123,7 +126,7 @@ void smrcRemoveRef(StorageManager *pMgr, void *pUserData, SMResult *psmResult)
     // lower reference count of the node
     pAlloc->shRefCount--;
 
-    // if ref count is now zero ?
+    // is ref count is now zero ?
     if (pAlloc->shRefCount == 0)
     {
 
@@ -146,11 +149,11 @@ void smrcRemoveRef(StorageManager *pMgr, void *pUserData, SMResult *psmResult)
     			// set the double pointer to point to the pointer in the userData 
     			ppNew = (char **)((char *)pUserData + pAttr.shOffset);
                         
-                        // if the pointer's value is NULL , go to next attrib
+                        // if the pointer's value is NULL , go to next attrib(ptr)
     			if (*ppNew == NULL)
     				continue;
 
-                        // if pointer's val is NOT NULL, call RemoveRef func
+                        // if pointer's val is NOT NULL, recursively call this function again
     			else 
     			    smrcRemoveRef(pMgr, *ppNew, psmResult);
     		}
@@ -164,54 +167,82 @@ void smrcRemoveRef(StorageManager *pMgr, void *pUserData, SMResult *psmResult)
     }
 }
 
-/******************** Name of Function **********************************
-function prototype 
+/******************** smrcAssoc **********************************
+void smrcAssoc(
+    StorageManager *pMgr, void *pUserDataFrom, char szAttrName[],
+    void *pUserDataTo, SMResult *psmResult)
+
 Purpose:
-    Explain what the function does including a brief overview of what it
-    returns.
+    This function make one pointer FROM a particular node point TO 
+    another node and then taking care of any other previous associations
 Parameters:
     List each parameter on a separate line including data type name and 
     description.  Each item should begin with whether the parameter is passed 
     in, out or both:
-    I   Passed in.  Value isn’t modified by subroutine.
-    O   Passed out. Value is returned through this parameter.
-    I/O Modified. Original value is used, but this subroutine modifies it.
-Notes:
-    Include any special assumptions.  If global variables are referenced, 
-    reference them.  Explain critical parts of the algorithm.
-Return value:
-    List the values returned by the function.  Do not list returned 
-    parameters.  Remove if void.
+    I   StorageManager *pMgr		pointer, used to access metadata to loop thru
+								    different attributes; also passed to smrcRemoveRef
+								    when it is called
+
+    I   void *pUserDataFrom			pointer, points the userData of the FROM node
+
+    I   char szAttrName[]			string, attribute name
+
+    I   void *pUserDataTo			pointer, points to the userData of the TO node
+
+    I   SMResult *psmResult 		pointer to error struct, an error message may be set
+								    in this struct
 **************************************************************************/
 void smrcAssoc(
     StorageManager *pMgr, void *pUserDataFrom, char szAttrName[],
     void *pUserDataTo, SMResult *psmResult)
 {
-	int i;              // incrementer
-	char **ppNew;
+	int i;              // incrementer variable
+	char **ppNew;		// double ptr. used to point to the pointer in userdata from 
     short type;
-    AllocNode *pAlloc, *pToAlloc;
+    AllocNode *pAlloc, *pToAlloc;  // 'from' and 'to' AllocNode pointers
+
+    // make pAlloc point to the start of the 'from' userData
 	pAlloc = (AllocNode *)(((char *)pUserDataFrom) - 3 * sizeof(short));
+
+    // make pAlloc point to the start of the 'to' userData
 	pToAlloc = (AllocNode *)(((char *)pUserDataTo) - 3 * sizeof(short));
 	type = pAlloc->shNodeType;
+
+	/* starting at beginning metaAttribute subscript, iterate thru all attributes
+	 *  while the node type is the correct type */
 	for(i = pMgr->nodeTypeM[type].shBeginMetaAttr;
     		pMgr->metaAttrM[i].shNodeType == type; i++)
 	{
-		MetaAttr n = pMgr->metaAttrM[i];
-		if ( (strcmp(szAttrName, n.szAttrName) == 0 ) &&
-                        n.cDataType == 'P')
+
+  		// set an individual attribute as pAttr
+		MetaAttr pAttr = pMgr->metaAttrM[i];
+
+		/* is the attrname that was passed into this func the same as the attrname of the
+		 * particular attribute? if so is the attr also a pointer? */
+		if ( (strcmp(szAttrName, pAttr.szAttrName) == 0 ) &&
+                        pAttr.cDataType == 'P')
 		{
 			psmResult->rc = 0;
-			ppNew = (char **)((char *)pUserDataFrom + n.shOffset);
+
+			// make the ppNew point to the acutal ptr in the userData section of the 'from' node
+			ppNew = (char **)((char *)pUserDataFrom + pAttr.shOffset);
 			if (*ppNew != NULL)
 				smrcRemoveRef(pMgr, *ppNew, psmResult);
+
+			/* copy the user data address of the node to be pointed to to the 
+			 * value of the pointer in the user data */
 			memcpy(ppNew, &pUserDataTo, sizeof(ppNew));
 			pToAlloc->shRefCount++;
 		} 
-		else if ( (strcmp(szAttrName, n.szAttrName) == 0 ) &&
-                        n.cDataType != 'P') 
+
+		/* is the attrname that was passed into this func NOT the same as the attrname of the
+		 * particular attribute OR is the attr NOT a pointer? */
+		else if ( (strcmp(szAttrName, pAttr.szAttrName) != 0 ) ||
+                        pAttr.cDataType != 'P') 
 		{
-                        printf("data type = %c\n", n.cDataType);
+
+			// set appropriate errors
+            printf("data type = %c\n", pAttr.cDataType);
 			psmResult->rc = RC_ASSOC_ATTR_NOT_PTR;
 			strcpy(
 		               psmResult->szErrorMessage,
@@ -220,53 +251,48 @@ void smrcAssoc(
 	}
 }
 
-/******************** Name of Function **********************************
-function prototype 
+/******************** smrcAddRef **********************************
+void smrcAddRef(StorageManager *pMgr, void *pUserDataTo, SMResult *psmResult)
+
 Purpose:
-    Explain what the function does including a brief overview of what it
-    returns.
+    Increment the reference count of the particular node by one
+
 Parameters:
-    List each parameter on a separate line including data type name and 
-    description.  Each item should begin with whether the parameter is passed 
-    in, out or both:
-    I   Passed in.  Value isn’t modified by subroutine.
-    O   Passed out. Value is returned through this parameter.
-    I/O Modified. Original value is used, but this subroutine modifies it.
-Notes:
-    Include any special assumptions.  If global variables are referenced, 
-    reference them.  Explain critical parts of the algorithm.
-Return value:
-    List the values returned by the function.  Do not list returned 
-    parameters.  Remove if void.
+    I   StorageManager *pMgr		????
+
+    I   void *pUserDataTo			pointer, points to the userData of the TO node
+
+    I   SMResult *psmResult			pointer to error struct, an error message may be set
+								    in this struct
 **************************************************************************/
 void smrcAddRef(
     StorageManager *pMgr, void *pUserDataTo, SMResult *psmResult)
 {
 	AllocNode *pAlloc;      // ptr to AllocNode to access AllocNode val
 
-        /* make pAlloc point to  pUserDataTo address - 6 (if short ==2 ) */
+        // make pAlloc point to  pUserDataTo address - 6 (if short ==2 )
     pAlloc = (AllocNode *)(((char *)pUserDataTo) - 3 * sizeof(short));
 	pAlloc->shRefCount++;
 }
 
-/******************** Name of Function **********************************
-function prototype 
+/******************** printNode **********************************
+extern "C" void printNode(StorageManager *pMgr, void *pUserData) 
 Purpose:
-    Explain what the function does including a brief overview of what it
-    returns.
+    this func goes thru a node and then prints out the values of this node
+    attributes in a human readable form
 Parameters:
-    List each parameter on a separate line including data type name and 
-    description.  Each item should begin with whether the parameter is passed 
-    in, out or both:
-    I   Passed in.  Value isn’t modified by subroutine.
-    O   Passed out. Value is returned through this parameter.
-    I/O Modified. Original value is used, but this subroutine modifies it.
+    I   StorageManager *pMgr			pointer, used to access metadata to loop
+     									thru different attributes;
+
+    I   void *pUserData 				pointer, points to the userData portion
+    									of a node
 Notes:
-    Include any special assumptions.  If global variables are referenced, 
-    reference them.  Explain critical parts of the algorithm.
-Return value:
-    List the values returned by the function.  Do not list returned 
-    parameters.  Remove if void.
+	the ULAddr MACRO is used in this function to print out the pointers addresses
+	it takes a pointer and casts it to unsigned long. Im passing into it the 
+	double pointer which points to a pointer inside of the userData. But I dereference
+	the double pointer to get the value inside the pointer thats in the userData so I
+	do pass a single pointer to ULAddr
+
 **************************************************************************/
 extern "C" void printNode(StorageManager *pMgr, void *pUserData)
 { 

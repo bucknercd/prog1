@@ -127,7 +127,7 @@ void smrcRemoveRef(StorageManager *pMgr, void *pUserData, SMResult *psmResult)
     if (pAlloc->shRefCount == 0)
     {
 
-    	// free the node and (possibly) set appropriate error code
+    	// free the node and set appropriate error code (if it needs to be set)
     	smFree(pMgr, pUserData, psmResult);
 
     	/* starting at beginning metaAttribute subscript, iterate thru all attributes
@@ -135,17 +135,29 @@ void smrcRemoveRef(StorageManager *pMgr, void *pUserData, SMResult *psmResult)
     	for(i = pMgr->nodeTypeM[type].shBeginMetaAttr;
     		pMgr->metaAttrM[i].shNodeType == type; i++)
     	{
-    		MetaAttr n = pMgr->metaAttrM[i];
-    		if (n.cDataType == 'P')
+
+  			// set an individual attribute as pAttr
+    		MetaAttr pAttr = pMgr->metaAttrM[i];
+
+    		// if attribute is a pointer ?
+    		if (pAttr.cDataType == 'P')
     		{
-    			ppNew = (char **)((char *)pUserData + n.shOffset);
+
+    			// set the double pointer to point to the pointer in the userData 
+    			ppNew = (char **)((char *)pUserData + pAttr.shOffset);
+                        
+                        // if the pointer's value is NULL , go to next attrib
     			if (*ppNew == NULL)
     				continue;
+
+                        // if pointer's val is NOT NULL, call RemoveRef func
     			else 
     			    smrcRemoveRef(pMgr, *ppNew, psmResult);
     		}
     	}
     } 
+
+    // if ref count is greater than zero, return from this func
     else if (pAlloc->shRefCount > 0) 
     {
     	return;

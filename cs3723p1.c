@@ -48,7 +48,7 @@ Parameters:
     I   char sbData             binary data in a character array, contians all data in node(on stack)
 
     I   SMResult *psmResult     pointer to error node , error mesg is set on this node
-    
+
 Notes:
     very important: userData info is being copied from the stack to our 
     virtual heap
@@ -262,7 +262,7 @@ Purpose:
     Increment the reference count of the particular node by one
 
 Parameters:
-    I   StorageManager *pMgr		????
+    I   StorageManager *pMgr		pointer to access metadata (not used in this func)
 
     I   void *pUserDataTo			pointer, points to the userData of the TO node
 

@@ -1,0 +1,1093 @@
+cat p1Input.txt | p1
+Metadata
+Node Type  Beg Attr Sub Total Sz
+Customer      0           56
+		Attribute Name Type Offset Size
+		customerId       S       0   12
+		name             S      12   20
+		pFirstItem       P      32    8
+		pNextCust        P      40    8
+		balance          D      48    8
+LineItem      5           32
+		Attribute Name Type Offset Size
+		productId        S       0   10
+		iQtyReq          I      12    4
+		dCost            D      16    8
+		pNextItem        P      24    8
+>>> ALLOC C111 Customer 111,Sal A Mander,NULL,NULL,100.00
+>>> PRTNODE C111
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C20	62	0		1		013D9C26
+
+		Attr Name	Type	Value
+		customerId	S	111
+		name      	S	Sal A Mander
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	100.000000
+>>> ALLOC C222 Customer 222,Barb Wire,NULL,NULL,200.00
+>>> PRTNODE C222
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C5E	62	0		1		013D9C64
+
+		Attr Name	Type	Value
+		customerId	S	222
+		name      	S	Barb Wire
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	200.000000
+>>> ALLOC PPF001 LineItem PPF001,5,9.95,NULL
+>>> PRTNODE PPF001
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C9C	38	1		1		013D9CA2
+
+		Attr Name	Type	Value
+		productId 	S	PPF001
+		iQtyReq   	I	5
+		dCost     	D	9.950000
+		pNextItem 	P	00000000
+*
+* associate customer 111 with a next pointing to 222
+*
+>>> ASSOC C111 pNextCust C222
+data type = S
+data type = S
+data type = P
+data type = D
+		smrcAssoc rc=801, This attribute is not a pointer.
+
+* customer 111's ref cnt should still be 1, but its pNextCust should point to 222
+>>> PRTNODE C111 
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C20	62	0		1		013D9C26
+
+		Attr Name	Type	Value
+		customerId	S	111
+		name      	S	Sal A Mander
+		pFirstItem	P	00000000
+		pNextCust 	P	013D9C64
+		balance   	D	100.000000
+* customer 222's ref cnt should now be 2
+>>> PRTNODE C222
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C5E	62	0		2		013D9C64
+
+		Attr Name	Type	Value
+		customerId	S	222
+		name      	S	Barb Wire
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	200.000000
+*
+* associate customer 111 to PPF001
+*
+>>> ASSOC C111 pFirstItem PPF001
+data type = S
+data type = S
+data type = P
+data type = D
+		smrcAssoc rc=801, This attribute is not a pointer.
+
+>>> PRTNODE C111
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C20	62	0		1		013D9C26
+
+		Attr Name	Type	Value
+		customerId	S	111
+		name      	S	Sal A Mander
+		pFirstItem	P	013D9CA2
+		pNextCust 	P	013D9C64
+		balance   	D	100.000000
+* associate customer 222 to 333
+>>> ALLOC C333 Customer 333,Misty Wind,NULL,NULL,70.00
+>>> ASSOC C222 pNextCust C333
+data type = S
+data type = S
+data type = P
+data type = D
+		smrcAssoc rc=801, This attribute is not a pointer.
+
+*
+* 111 should point to 222 which points to 333
+* 111 should also point to PPF001
+*
+>>> PRTALL
+C333:0x13d9cc8
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9CC2	62	0		2		013D9CC8
+
+		Attr Name	Type	Value
+		customerId	S	333
+		name      	S	Misty Wind
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	70.000000
+PPF001:0x13d9ca2
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C9C	38	1		2		013D9CA2
+
+		Attr Name	Type	Value
+		productId 	S	PPF001
+		iQtyReq   	I	5
+		dCost     	D	9.950000
+		pNextItem 	P	00000000
+C222:0x13d9c64
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C5E	62	0		2		013D9C64
+
+		Attr Name	Type	Value
+		customerId	S	222
+		name      	S	Barb Wire
+		pFirstItem	P	00000000
+		pNextCust 	P	013D9CC8
+		balance   	D	200.000000
+C111:0x13d9c26
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C20	62	0		1		013D9C26
+
+		Attr Name	Type	Value
+		customerId	S	111
+		name      	S	Sal A Mander
+		pFirstItem	P	013D9CA2
+		pNextCust 	P	013D9C64
+		balance   	D	100.000000
+
+* add another customer
+>>> ALLOC C444 Customer 444,Emory Board,NULL,NULL,44.44
+>>> ADDREF PC444 C444
+* Customer 444 should have a ref count of 2
+>>> PRTNODE C444
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D00	62	0		2		013D9D06
+
+		Attr Name	Type	Value
+		customerId	S	444
+		name      	S	Emory Board
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	44.440000
+>>> DUMP
+	Address  Mem   Size
+	013D9C20 Alloc   62
+			   013D9C22 .  .  .  .  1  1  1  .  .  .  .  .  .  .  .  .  S  a  l     
+			            01 00 00 00 31 31 31 00 00 00 00 00 00 00 00 00 53 61 6C 20 
+			   013D9C36 A     M  a  n  d  e  r  .  .  .  .  .  .  .  .  .  .  =  .  
+			            41 20 4D 61 6E 64 65 72 00 00 00 00 00 00 00 00 A2 9C 3D 01 
+			   013D9C4A .  .  .  .  d  .  =  .  .  .  .  .  .  .  .  .  .  .  Y  @  
+			            00 00 00 00 64 9C 3D 01 00 00 00 00 00 00 00 00 00 00 59 40 
+	013D9C5E Alloc   62
+			   013D9C60 .  .  .  .  2  2  2  .  .  .  .  .  .  .  .  .  B  a  r  b  
+			            02 00 00 00 32 32 32 00 00 00 00 00 00 00 00 00 42 61 72 62 
+			   013D9C74    W  i  r  e  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  
+			            20 57 69 72 65 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+			   013D9C88 .  .  .  .  .  .  =  .  .  .  .  .  .  .  .  .  .  .  i  @  
+			            00 00 00 00 C8 9C 3D 01 00 00 00 00 00 00 00 00 00 00 69 40 
+	013D9C9C Alloc   38
+			   013D9C9E .  .  .  .  P  P  F  0  0  1  .  .  .  .  .  .  .  .  .  .  
+			            02 00 01 00 50 50 46 30 30 31 00 00 00 00 00 00 05 00 00 00 
+			   013D9CB2 f  f  f  f  f  .  #  @  .  .  .  .  .  .  .  .  
+			            66 66 66 66 66 E6 23 40 00 00 00 00 00 00 00 00 
+	013D9CC2 Alloc   62
+			   013D9CC4 .  .  .  .  3  3  3  .  .  .  .  .  .  .  .  .  M  i  s  t  
+			            02 00 00 00 33 33 33 00 00 00 00 00 00 00 00 00 4D 69 73 74 
+			   013D9CD8 y     W  i  n  d  .  .  .  .  .  .  .  .  .  .  .  .  .  .  
+			            79 20 57 69 6E 64 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+			   013D9CEC .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  Q  @  
+			            00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 80 51 40 
+	013D9D00 Alloc   62
+			   013D9D02 .  .  .  .  4  4  4  .  .  .  .  .  .  .  .  .  E  m  o  r  
+			            02 00 00 00 34 34 34 00 00 00 00 00 00 00 00 00 45 6D 6F 72 
+			   013D9D16 y     B  o  a  r  d  .  .  .  .  .  .  .  .  .  .  .  .  .  
+			            79 20 42 6F 61 72 64 00 00 00 00 00 00 00 00 00 00 00 00 00 
+			   013D9D2A .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  Q  8  F  @  
+			            00 00 00 00 00 00 00 00 00 00 00 00 B8 1E 85 EB 51 38 46 40 
+*
+* Add a ref to 111 
+*
+>>> ADDREF PC111 C111
+*  111 should have a ref cnt of 2
+>>> PRTALL
+PC111:0x13d9c26
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C20	62	0		2		013D9C26
+
+		Attr Name	Type	Value
+		customerId	S	111
+		name      	S	Sal A Mander
+		pFirstItem	P	013D9CA2
+		pNextCust 	P	013D9C64
+		balance   	D	100.000000
+C444:0x13d9d06
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D00	62	0		2		013D9D06
+
+		Attr Name	Type	Value
+		customerId	S	444
+		name      	S	Emory Board
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	44.440000
+C111:0x13d9c26
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C20	62	0		2		013D9C26
+
+		Attr Name	Type	Value
+		customerId	S	111
+		name      	S	Sal A Mander
+		pFirstItem	P	013D9CA2
+		pNextCust 	P	013D9C64
+		balance   	D	100.000000
+PPF001:0x13d9ca2
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C9C	38	1		2		013D9CA2
+
+		Attr Name	Type	Value
+		productId 	S	PPF001
+		iQtyReq   	I	5
+		dCost     	D	9.950000
+		pNextItem 	P	00000000
+PC444:0x13d9d06
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D00	62	0		2		013D9D06
+
+		Attr Name	Type	Value
+		customerId	S	444
+		name      	S	Emory Board
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	44.440000
+C222:0x13d9c64
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C5E	62	0		2		013D9C64
+
+		Attr Name	Type	Value
+		customerId	S	222
+		name      	S	Barb Wire
+		pFirstItem	P	00000000
+		pNextCust 	P	013D9CC8
+		balance   	D	200.000000
+C333:0x13d9cc8
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9CC2	62	0		2		013D9CC8
+
+		Attr Name	Type	Value
+		customerId	S	333
+		name      	S	Misty Wind
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	70.000000
+
+* Decrement 111's ref cnt, this shouldn't affect anything else
+>>> DEREF PC111 NULL
+>>> PRTALL
+PC111:(nil)
+C444:0x13d9d06
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D00	62	0		2		013D9D06
+
+		Attr Name	Type	Value
+		customerId	S	444
+		name      	S	Emory Board
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	44.440000
+C111:0x13d9c26
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C20	62	0		1		013D9C26
+
+		Attr Name	Type	Value
+		customerId	S	111
+		name      	S	Sal A Mander
+		pFirstItem	P	013D9CA2
+		pNextCust 	P	013D9C64
+		balance   	D	100.000000
+PPF001:0x13d9ca2
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C9C	38	1		2		013D9CA2
+
+		Attr Name	Type	Value
+		productId 	S	PPF001
+		iQtyReq   	I	5
+		dCost     	D	9.950000
+		pNextItem 	P	00000000
+PC444:0x13d9d06
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D00	62	0		2		013D9D06
+
+		Attr Name	Type	Value
+		customerId	S	444
+		name      	S	Emory Board
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	44.440000
+C222:0x13d9c64
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C5E	62	0		2		013D9C64
+
+		Attr Name	Type	Value
+		customerId	S	222
+		name      	S	Barb Wire
+		pFirstItem	P	00000000
+		pNextCust 	P	013D9CC8
+		balance   	D	200.000000
+C333:0x13d9cc8
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9CC2	62	0		2		013D9CC8
+
+		Attr Name	Type	Value
+		customerId	S	333
+		name      	S	Misty Wind
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	70.000000
+
+*
+* remove the last ref to 111
+* it should be gone, and there is some affect on the other nodes
+*
+>>> DEREF C111
+>>> PRTALL
+PC111:(nil)
+C444:0x13d9d06
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D00	62	0		2		013D9D06
+
+		Attr Name	Type	Value
+		customerId	S	444
+		name      	S	Emory Board
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	44.440000
+C111:0x13d9c26
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C20	-62	0		0		013D9C26
+
+		Attr Name	Type	Value
+		customerId	S	111
+		name      	S	Sal A Mander
+		pFirstItem	P	013D9CA2
+		pNextCust 	P	013D9C64
+		balance   	D	100.000000
+PPF001:0x13d9ca2
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C9C	38	1		1		013D9CA2
+
+		Attr Name	Type	Value
+		productId 	S	PPF001
+		iQtyReq   	I	5
+		dCost     	D	9.950000
+		pNextItem 	P	00000000
+PC444:0x13d9d06
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D00	62	0		2		013D9D06
+
+		Attr Name	Type	Value
+		customerId	S	444
+		name      	S	Emory Board
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	44.440000
+C222:0x13d9c64
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C5E	62	0		1		013D9C64
+
+		Attr Name	Type	Value
+		customerId	S	222
+		name      	S	Barb Wire
+		pFirstItem	P	00000000
+		pNextCust 	P	013D9CC8
+		balance   	D	200.000000
+C333:0x13d9cc8
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9CC2	62	0		2		013D9CC8
+
+		Attr Name	Type	Value
+		customerId	S	333
+		name      	S	Misty Wind
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	70.000000
+
+>>> DUMP
+	Address  Mem   Size
+	013D9C20 Free    62
+			   013D9C22 .  .  .  .  1  1  1  .  .  .  .  .  .  .  .  .  S  a  l     
+			            00 00 00 00 31 31 31 00 00 00 00 00 00 00 00 00 53 61 6C 20 
+			   013D9C36 A     M  a  n  d  e  r  .  .  .  .  .  .  .  .  .  .  =  .  
+			            41 20 4D 61 6E 64 65 72 00 00 00 00 00 00 00 00 A2 9C 3D 01 
+			   013D9C4A .  .  .  .  d  .  =  .  .  .  .  .  .  .  .  .  .  .  Y  @  
+			            00 00 00 00 64 9C 3D 01 00 00 00 00 00 00 00 00 00 00 59 40 
+	013D9C5E Alloc   62
+			   013D9C60 .  .  .  .  2  2  2  .  .  .  .  .  .  .  .  .  B  a  r  b  
+			            01 00 00 00 32 32 32 00 00 00 00 00 00 00 00 00 42 61 72 62 
+			   013D9C74    W  i  r  e  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  
+			            20 57 69 72 65 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+			   013D9C88 .  .  .  .  .  .  =  .  .  .  .  .  .  .  .  .  .  .  i  @  
+			            00 00 00 00 C8 9C 3D 01 00 00 00 00 00 00 00 00 00 00 69 40 
+	013D9C9C Alloc   38
+			   013D9C9E .  .  .  .  P  P  F  0  0  1  .  .  .  .  .  .  .  .  .  .  
+			            01 00 01 00 50 50 46 30 30 31 00 00 00 00 00 00 05 00 00 00 
+			   013D9CB2 f  f  f  f  f  .  #  @  .  .  .  .  .  .  .  .  
+			            66 66 66 66 66 E6 23 40 00 00 00 00 00 00 00 00 
+	013D9CC2 Alloc   62
+			   013D9CC4 .  .  .  .  3  3  3  .  .  .  .  .  .  .  .  .  M  i  s  t  
+			            02 00 00 00 33 33 33 00 00 00 00 00 00 00 00 00 4D 69 73 74 
+			   013D9CD8 y     W  i  n  d  .  .  .  .  .  .  .  .  .  .  .  .  .  .  
+			            79 20 57 69 6E 64 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+			   013D9CEC .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  Q  @  
+			            00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 80 51 40 
+	013D9D00 Alloc   62
+			   013D9D02 .  .  .  .  4  4  4  .  .  .  .  .  .  .  .  .  E  m  o  r  
+			            02 00 00 00 34 34 34 00 00 00 00 00 00 00 00 00 45 6D 6F 72 
+			   013D9D16 y     B  o  a  r  d  .  .  .  .  .  .  .  .  .  .  .  .  .  
+			            79 20 42 6F 61 72 64 00 00 00 00 00 00 00 00 00 00 00 00 00 
+			   013D9D2A .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  Q  8  F  @  
+			            00 00 00 00 00 00 00 00 00 00 00 00 B8 1E 85 EB 51 38 46 40 
+*
+* Allocate another node and associate it with 222
+* Allocate another line item and associate 555 to it
+*
+>>> ALLOC C555 Customer 555,Holly Graph,NULL,NULL,55.00
+>>> ASSOC C555 pNextCust C222
+data type = S
+data type = S
+data type = P
+data type = D
+		smrcAssoc rc=801, This attribute is not a pointer.
+
+>>> ALLOC SBB001 LineItem SBB001,1,19.95,NULL
+>>> ASSOC C555 pFirstItem SBB001
+data type = S
+data type = S
+data type = P
+data type = D
+		smrcAssoc rc=801, This attribute is not a pointer.
+
+>>> PRTALL
+SBB001:0x13d9d82
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D7C	38	1		2		013D9D82
+
+		Attr Name	Type	Value
+		productId 	S	SBB001
+		iQtyReq   	I	1
+		dCost     	D	19.950000
+		pNextItem 	P	00000000
+PC111:(nil)
+C444:0x13d9d06
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D00	62	0		2		013D9D06
+
+		Attr Name	Type	Value
+		customerId	S	444
+		name      	S	Emory Board
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	44.440000
+C111:0x13d9c26
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C20	-62	0		0		013D9C26
+
+		Attr Name	Type	Value
+		customerId	S	111
+		name      	S	Sal A Mander
+		pFirstItem	P	013D9CA2
+		pNextCust 	P	013D9C64
+		balance   	D	100.000000
+PPF001:0x13d9ca2
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C9C	38	1		1		013D9CA2
+
+		Attr Name	Type	Value
+		productId 	S	PPF001
+		iQtyReq   	I	5
+		dCost     	D	9.950000
+		pNextItem 	P	00000000
+C555:0x13d9d44
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D3E	62	0		1		013D9D44
+
+		Attr Name	Type	Value
+		customerId	S	555
+		name      	S	Holly Graph
+		pFirstItem	P	013D9D82
+		pNextCust 	P	013D9C64
+		balance   	D	55.000000
+PC444:0x13d9d06
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D00	62	0		2		013D9D06
+
+		Attr Name	Type	Value
+		customerId	S	444
+		name      	S	Emory Board
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	44.440000
+C222:0x13d9c64
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C5E	62	0		2		013D9C64
+
+		Attr Name	Type	Value
+		customerId	S	222
+		name      	S	Barb Wire
+		pFirstItem	P	00000000
+		pNextCust 	P	013D9CC8
+		balance   	D	200.000000
+C333:0x13d9cc8
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9CC2	62	0		2		013D9CC8
+
+		Attr Name	Type	Value
+		customerId	S	333
+		name      	S	Misty Wind
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	70.000000
+
+*
+* assoc the line items 
+*
+>>> ALLOC BOM001 LineItem BOM001,1,29.95,NULL
+>>> ASSOC SBB001 pNextItem BOM001
+data type = S
+data type = I
+data type = D
+>>> PRTALL
+SBB001:0x13d9d82
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D7C	38	1		2		013D9D82
+
+		Attr Name	Type	Value
+		productId 	S	SBB001
+		iQtyReq   	I	1
+		dCost     	D	19.950000
+		pNextItem 	P	013D9DA8
+PC111:(nil)
+C444:0x13d9d06
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D00	62	0		2		013D9D06
+
+		Attr Name	Type	Value
+		customerId	S	444
+		name      	S	Emory Board
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	44.440000
+C111:0x13d9c26
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C20	-62	0		0		013D9C26
+
+		Attr Name	Type	Value
+		customerId	S	111
+		name      	S	Sal A Mander
+		pFirstItem	P	013D9CA2
+		pNextCust 	P	013D9C64
+		balance   	D	100.000000
+PPF001:0x13d9ca2
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C9C	38	1		1		013D9CA2
+
+		Attr Name	Type	Value
+		productId 	S	PPF001
+		iQtyReq   	I	5
+		dCost     	D	9.950000
+		pNextItem 	P	00000000
+BOM001:0x13d9da8
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9DA2	38	1		2		013D9DA8
+
+		Attr Name	Type	Value
+		productId 	S	BOM001
+		iQtyReq   	I	1
+		dCost     	D	29.950000
+		pNextItem 	P	00000000
+C555:0x13d9d44
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D3E	62	0		1		013D9D44
+
+		Attr Name	Type	Value
+		customerId	S	555
+		name      	S	Holly Graph
+		pFirstItem	P	013D9D82
+		pNextCust 	P	013D9C64
+		balance   	D	55.000000
+PC444:0x13d9d06
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D00	62	0		2		013D9D06
+
+		Attr Name	Type	Value
+		customerId	S	444
+		name      	S	Emory Board
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	44.440000
+C222:0x13d9c64
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C5E	62	0		2		013D9C64
+
+		Attr Name	Type	Value
+		customerId	S	222
+		name      	S	Barb Wire
+		pFirstItem	P	00000000
+		pNextCust 	P	013D9CC8
+		balance   	D	200.000000
+C333:0x13d9cc8
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9CC2	62	0		2		013D9CC8
+
+		Attr Name	Type	Value
+		customerId	S	333
+		name      	S	Misty Wind
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	70.000000
+
+*
+* decrement the count for SBB001, C222
+*
+>>> DEREF SBB001
+>>> DEREF C222
+>>> PRTALL
+SBB001:0x13d9d82
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D7C	38	1		1		013D9D82
+
+		Attr Name	Type	Value
+		productId 	S	SBB001
+		iQtyReq   	I	1
+		dCost     	D	19.950000
+		pNextItem 	P	013D9DA8
+PC111:(nil)
+C444:0x13d9d06
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D00	62	0		2		013D9D06
+
+		Attr Name	Type	Value
+		customerId	S	444
+		name      	S	Emory Board
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	44.440000
+C111:0x13d9c26
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C20	-62	0		0		013D9C26
+
+		Attr Name	Type	Value
+		customerId	S	111
+		name      	S	Sal A Mander
+		pFirstItem	P	013D9CA2
+		pNextCust 	P	013D9C64
+		balance   	D	100.000000
+PPF001:0x13d9ca2
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C9C	38	1		1		013D9CA2
+
+		Attr Name	Type	Value
+		productId 	S	PPF001
+		iQtyReq   	I	5
+		dCost     	D	9.950000
+		pNextItem 	P	00000000
+BOM001:0x13d9da8
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9DA2	38	1		2		013D9DA8
+
+		Attr Name	Type	Value
+		productId 	S	BOM001
+		iQtyReq   	I	1
+		dCost     	D	29.950000
+		pNextItem 	P	00000000
+C555:0x13d9d44
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D3E	62	0		1		013D9D44
+
+		Attr Name	Type	Value
+		customerId	S	555
+		name      	S	Holly Graph
+		pFirstItem	P	013D9D82
+		pNextCust 	P	013D9C64
+		balance   	D	55.000000
+PC444:0x13d9d06
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D00	62	0		2		013D9D06
+
+		Attr Name	Type	Value
+		customerId	S	444
+		name      	S	Emory Board
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	44.440000
+C222:0x13d9c64
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C5E	62	0		1		013D9C64
+
+		Attr Name	Type	Value
+		customerId	S	222
+		name      	S	Barb Wire
+		pFirstItem	P	00000000
+		pNextCust 	P	013D9CC8
+		balance   	D	200.000000
+C333:0x13d9cc8
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9CC2	62	0		2		013D9CC8
+
+		Attr Name	Type	Value
+		customerId	S	333
+		name      	S	Misty Wind
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	70.000000
+
+*
+* DEREF C555 and it propagates decrements and frees:
+*    
+*
+>>> DEREF C555
+>>> DUMP
+	Address  Mem   Size
+	013D9C20 Free    62
+			   013D9C22 .  .  .  .  1  1  1  .  .  .  .  .  .  .  .  .  S  a  l     
+			            00 00 00 00 31 31 31 00 00 00 00 00 00 00 00 00 53 61 6C 20 
+			   013D9C36 A     M  a  n  d  e  r  .  .  .  .  .  .  .  .  .  .  =  .  
+			            41 20 4D 61 6E 64 65 72 00 00 00 00 00 00 00 00 A2 9C 3D 01 
+			   013D9C4A .  .  .  .  d  .  =  .  .  .  .  .  .  .  .  .  .  .  Y  @  
+			            00 00 00 00 64 9C 3D 01 00 00 00 00 00 00 00 00 00 00 59 40 
+	013D9C5E Free    62
+			   013D9C60 .  .  .  .  2  2  2  .  .  .  .  .  .  .  .  .  B  a  r  b  
+			            00 00 00 00 32 32 32 00 00 00 00 00 00 00 00 00 42 61 72 62 
+			   013D9C74    W  i  r  e  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  
+			            20 57 69 72 65 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+			   013D9C88 .  .  .  .  .  .  =  .  .  .  .  .  .  .  .  .  .  .  i  @  
+			            00 00 00 00 C8 9C 3D 01 00 00 00 00 00 00 00 00 00 00 69 40 
+	013D9C9C Alloc   38
+			   013D9C9E .  .  .  .  P  P  F  0  0  1  .  .  .  .  .  .  .  .  .  .  
+			            01 00 01 00 50 50 46 30 30 31 00 00 00 00 00 00 05 00 00 00 
+			   013D9CB2 f  f  f  f  f  .  #  @  .  .  .  .  .  .  .  .  
+			            66 66 66 66 66 E6 23 40 00 00 00 00 00 00 00 00 
+	013D9CC2 Alloc   62
+			   013D9CC4 .  .  .  .  3  3  3  .  .  .  .  .  .  .  .  .  M  i  s  t  
+			            01 00 00 00 33 33 33 00 00 00 00 00 00 00 00 00 4D 69 73 74 
+			   013D9CD8 y     W  i  n  d  .  .  .  .  .  .  .  .  .  .  .  .  .  .  
+			            79 20 57 69 6E 64 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+			   013D9CEC .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  Q  @  
+			            00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 80 51 40 
+	013D9D00 Alloc   62
+			   013D9D02 .  .  .  .  4  4  4  .  .  .  .  .  .  .  .  .  E  m  o  r  
+			            02 00 00 00 34 34 34 00 00 00 00 00 00 00 00 00 45 6D 6F 72 
+			   013D9D16 y     B  o  a  r  d  .  .  .  .  .  .  .  .  .  .  .  .  .  
+			            79 20 42 6F 61 72 64 00 00 00 00 00 00 00 00 00 00 00 00 00 
+			   013D9D2A .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  Q  8  F  @  
+			            00 00 00 00 00 00 00 00 00 00 00 00 B8 1E 85 EB 51 38 46 40 
+	013D9D3E Free    62
+			   013D9D40 .  .  .  .  5  5  5  .  .  .  .  .  .  .  .  .  H  o  l  l  
+			            00 00 00 00 35 35 35 00 00 00 00 00 00 00 00 00 48 6F 6C 6C 
+			   013D9D54 y     G  r  a  p  h  .  .  .  .  .  .  .  .  .  .  .  =  .  
+			            79 20 47 72 61 70 68 00 00 00 00 00 00 00 00 00 82 9D 3D 01 
+			   013D9D68 .  .  .  .  d  .  =  .  .  .  .  .  .  .  .  .  .  .  K  @  
+			            00 00 00 00 64 9C 3D 01 00 00 00 00 00 00 00 00 00 80 4B 40 
+	013D9D7C Free    38
+			   013D9D7E .  .  .  .  S  B  B  0  0  1  .  .  .  .  .  .  .  .  .  .  
+			            00 00 01 00 53 42 42 30 30 31 00 00 00 00 00 00 01 00 00 00 
+			   013D9D92 3  3  3  3  3  .  3  @  .  .  =  .  .  .  .  .  
+			            33 33 33 33 33 F3 33 40 A8 9D 3D 01 00 00 00 00 
+	013D9DA2 Alloc   38
+			   013D9DA4 .  .  .  .  B  O  M  0  0  1  .  .  .  .  .  .  .  .  .  .  
+			            01 00 01 00 42 4F 4D 30 30 31 00 00 00 00 00 00 01 00 00 00 
+			   013D9DB8 3  3  3  3  3  .  =  @  .  .  .  .  .  .  .  .  
+			            33 33 33 33 33 F3 3D 40 00 00 00 00 00 00 00 00 
+>>> ALLOC C666 Customer 666,Bob L Head,NULL,NULL,66.00
+>>> ASSOC C444 pNextCust C666
+data type = S
+data type = S
+data type = P
+data type = D
+		smrcAssoc rc=801, This attribute is not a pointer.
+
+>>> PRTALL
+C222:0x13d9c64
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C5E	-62	0		0		013D9C64
+
+		Attr Name	Type	Value
+		customerId	S	222
+		name      	S	Barb Wire
+		pFirstItem	P	00000000
+		pNextCust 	P	013D9CC8
+		balance   	D	200.000000
+C333:0x13d9cc8
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9CC2	62	0		1		013D9CC8
+
+		Attr Name	Type	Value
+		customerId	S	333
+		name      	S	Misty Wind
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	70.000000
+PC444:0x13d9d06
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D00	62	0		2		013D9D06
+
+		Attr Name	Type	Value
+		customerId	S	444
+		name      	S	Emory Board
+		pFirstItem	P	00000000
+		pNextCust 	P	013D9DCE
+		balance   	D	44.440000
+BOM001:0x13d9da8
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9DA2	38	1		1		013D9DA8
+
+		Attr Name	Type	Value
+		productId 	S	BOM001
+		iQtyReq   	I	1
+		dCost     	D	29.950000
+		pNextItem 	P	00000000
+PPF001:0x13d9ca2
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C9C	38	1		1		013D9CA2
+
+		Attr Name	Type	Value
+		productId 	S	PPF001
+		iQtyReq   	I	5
+		dCost     	D	9.950000
+		pNextItem 	P	00000000
+C555:0x13d9d44
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D3E	-62	0		0		013D9D44
+
+		Attr Name	Type	Value
+		customerId	S	555
+		name      	S	Holly Graph
+		pFirstItem	P	013D9D82
+		pNextCust 	P	013D9C64
+		balance   	D	55.000000
+C111:0x13d9c26
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C20	-62	0		0		013D9C26
+
+		Attr Name	Type	Value
+		customerId	S	111
+		name      	S	Sal A Mander
+		pFirstItem	P	013D9CA2
+		pNextCust 	P	013D9C64
+		balance   	D	100.000000
+C444:0x13d9d06
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D00	62	0		2		013D9D06
+
+		Attr Name	Type	Value
+		customerId	S	444
+		name      	S	Emory Board
+		pFirstItem	P	00000000
+		pNextCust 	P	013D9DCE
+		balance   	D	44.440000
+PC111:(nil)
+C666:0x13d9dce
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9DC8	62	0		2		013D9DCE
+
+		Attr Name	Type	Value
+		customerId	S	666
+		name      	S	Bob L Head
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	66.000000
+SBB001:0x13d9d82
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D7C	-38	1		0		013D9D82
+
+		Attr Name	Type	Value
+		productId 	S	SBB001
+		iQtyReq   	I	1
+		dCost     	D	19.950000
+		pNextItem 	P	013D9DA8
+
+*
+* Assoc C444 with a different customer, 
+* causing the old customer assoc (C666) to be decremented
+*
+>>> ALLOC C777 Customer 777,Flo N Water,NULL,NULL,77.00
+>>> ASSOC C444 pNextCust C777
+data type = S
+data type = S
+data type = P
+data type = D
+		smrcAssoc rc=801, This attribute is not a pointer.
+
+>>> PRTALL
+C777:0x13d9e0c
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9E06	62	0		2		013D9E0C
+
+		Attr Name	Type	Value
+		customerId	S	777
+		name      	S	Flo N Water
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	77.000000
+C222:0x13d9c64
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C5E	-62	0		0		013D9C64
+
+		Attr Name	Type	Value
+		customerId	S	222
+		name      	S	Barb Wire
+		pFirstItem	P	00000000
+		pNextCust 	P	013D9CC8
+		balance   	D	200.000000
+C333:0x13d9cc8
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9CC2	62	0		1		013D9CC8
+
+		Attr Name	Type	Value
+		customerId	S	333
+		name      	S	Misty Wind
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	70.000000
+PC444:0x13d9d06
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D00	62	0		2		013D9D06
+
+		Attr Name	Type	Value
+		customerId	S	444
+		name      	S	Emory Board
+		pFirstItem	P	00000000
+		pNextCust 	P	013D9E0C
+		balance   	D	44.440000
+BOM001:0x13d9da8
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9DA2	38	1		1		013D9DA8
+
+		Attr Name	Type	Value
+		productId 	S	BOM001
+		iQtyReq   	I	1
+		dCost     	D	29.950000
+		pNextItem 	P	00000000
+PPF001:0x13d9ca2
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C9C	38	1		1		013D9CA2
+
+		Attr Name	Type	Value
+		productId 	S	PPF001
+		iQtyReq   	I	5
+		dCost     	D	9.950000
+		pNextItem 	P	00000000
+C555:0x13d9d44
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D3E	-62	0		0		013D9D44
+
+		Attr Name	Type	Value
+		customerId	S	555
+		name      	S	Holly Graph
+		pFirstItem	P	013D9D82
+		pNextCust 	P	013D9C64
+		balance   	D	55.000000
+C111:0x13d9c26
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9C20	-62	0		0		013D9C26
+
+		Attr Name	Type	Value
+		customerId	S	111
+		name      	S	Sal A Mander
+		pFirstItem	P	013D9CA2
+		pNextCust 	P	013D9C64
+		balance   	D	100.000000
+C444:0x13d9d06
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D00	62	0		2		013D9D06
+
+		Attr Name	Type	Value
+		customerId	S	444
+		name      	S	Emory Board
+		pFirstItem	P	00000000
+		pNextCust 	P	013D9E0C
+		balance   	D	44.440000
+PC111:(nil)
+C666:0x13d9dce
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9DC8	62	0		1		013D9DCE
+
+		Attr Name	Type	Value
+		customerId	S	666
+		name      	S	Bob L Head
+		pFirstItem	P	00000000
+		pNextCust 	P	00000000
+		balance   	D	66.000000
+SBB001:0x13d9d82
+Alloc Address	Size	Node Type	Ref Cnt		Data Address
+013D9D7C	-38	1		0		013D9D82
+
+		Attr Name	Type	Value
+		productId 	S	SBB001
+		iQtyReq   	I	1
+		dCost     	D	19.950000
+		pNextItem 	P	013D9DA8
+
+>>> DUMP	Address  Mem   Size
+	013D9C20 Free    62
+			   013D9C22 .  .  .  .  1  1  1  .  .  .  .  .  .  .  .  .  S  a  l     
+			            00 00 00 00 31 31 31 00 00 00 00 00 00 00 00 00 53 61 6C 20 
+			   013D9C36 A     M  a  n  d  e  r  .  .  .  .  .  .  .  .  .  .  =  .  
+			            41 20 4D 61 6E 64 65 72 00 00 00 00 00 00 00 00 A2 9C 3D 01 
+			   013D9C4A .  .  .  .  d  .  =  .  .  .  .  .  .  .  .  .  .  .  Y  @  
+			            00 00 00 00 64 9C 3D 01 00 00 00 00 00 00 00 00 00 00 59 40 
+	013D9C5E Free    62
+			   013D9C60 .  .  .  .  2  2  2  .  .  .  .  .  .  .  .  .  B  a  r  b  
+			            00 00 00 00 32 32 32 00 00 00 00 00 00 00 00 00 42 61 72 62 
+			   013D9C74    W  i  r  e  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  
+			            20 57 69 72 65 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+			   013D9C88 .  .  .  .  .  .  =  .  .  .  .  .  .  .  .  .  .  .  i  @  
+			            00 00 00 00 C8 9C 3D 01 00 00 00 00 00 00 00 00 00 00 69 40 
+	013D9C9C Alloc   38
+			   013D9C9E .  .  .  .  P  P  F  0  0  1  .  .  .  .  .  .  .  .  .  .  
+			            01 00 01 00 50 50 46 30 30 31 00 00 00 00 00 00 05 00 00 00 
+			   013D9CB2 f  f  f  f  f  .  #  @  .  .  .  .  .  .  .  .  
+			            66 66 66 66 66 E6 23 40 00 00 00 00 00 00 00 00 
+	013D9CC2 Alloc   62
+			   013D9CC4 .  .  .  .  3  3  3  .  .  .  .  .  .  .  .  .  M  i  s  t  
+			            01 00 00 00 33 33 33 00 00 00 00 00 00 00 00 00 4D 69 73 74 
+			   013D9CD8 y     W  i  n  d  .  .  .  .  .  .  .  .  .  .  .  .  .  .  
+			            79 20 57 69 6E 64 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+			   013D9CEC .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  Q  @  
+			            00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 80 51 40 
+	013D9D00 Alloc   62
+			   013D9D02 .  .  .  .  4  4  4  .  .  .  .  .  .  .  .  .  E  m  o  r  
+			            02 00 00 00 34 34 34 00 00 00 00 00 00 00 00 00 45 6D 6F 72 
+			   013D9D16 y     B  o  a  r  d  .  .  .  .  .  .  .  .  .  .  .  .  .  
+			            79 20 42 6F 61 72 64 00 00 00 00 00 00 00 00 00 00 00 00 00 
+			   013D9D2A .  .  .  .  .  .  =  .  .  .  .  .  .  .  .  .  Q  8  F  @  
+			            00 00 00 00 0C 9E 3D 01 00 00 00 00 B8 1E 85 EB 51 38 46 40 
+	013D9D3E Free    62
+			   013D9D40 .  .  .  .  5  5  5  .  .  .  .  .  .  .  .  .  H  o  l  l  
+			            00 00 00 00 35 35 35 00 00 00 00 00 00 00 00 00 48 6F 6C 6C 
+			   013D9D54 y     G  r  a  p  h  .  .  .  .  .  .  .  .  .  .  .  =  .  
+			            79 20 47 72 61 70 68 00 00 00 00 00 00 00 00 00 82 9D 3D 01 
+			   013D9D68 .  .  .  .  d  .  =  .  .  .  .  .  .  .  .  .  .  .  K  @  
+			            00 00 00 00 64 9C 3D 01 00 00 00 00 00 00 00 00 00 80 4B 40 
+	013D9D7C Free    38
+			   013D9D7E .  .  .  .  S  B  B  0  0  1  .  .  .  .  .  .  .  .  .  .  
+			            00 00 01 00 53 42 42 30 30 31 00 00 00 00 00 00 01 00 00 00 
+			   013D9D92 3  3  3  3  3  .  3  @  .  .  =  .  .  .  .  .  
+			            33 33 33 33 33 F3 33 40 A8 9D 3D 01 00 00 00 00 
+	013D9DA2 Alloc   38
+			   013D9DA4 .  .  .  .  B  O  M  0  0  1  .  .  .  .  .  .  .  .  .  .  
+			            01 00 01 00 42 4F 4D 30 30 31 00 00 00 00 00 00 01 00 00 00 
+			   013D9DB8 3  3  3  3  3  .  =  @  .  .  .  .  .  .  .  .  
+			            33 33 33 33 33 F3 3D 40 00 00 00 00 00 00 00 00 
+	013D9DC8 Alloc   62
+			   013D9DCA .  .  .  .  6  6  6  .  .  .  .  .  .  .  .  .  B  o  b     
+			            01 00 00 00 36 36 36 00 00 00 00 00 00 00 00 00 42 6F 62 20 
+			   013D9DDE L     H  e  a  d  .  .  .  .  .  .  .  .  .  .  .  .  .  .  
+			            4C 20 48 65 61 64 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+			   013D9DF2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  P  @  
+			            00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 80 50 40 
+	013D9E06 Alloc   62
+			   013D9E08 .  .  .  .  7  7  7  .  .  .  .  .  .  .  .  .  F  l  o     
+			            02 00 00 00 37 37 37 00 00 00 00 00 00 00 00 00 46 6C 6F 20 
+			   013D9E1C N     W  a  t  e  r  .  .  .  .  .  .  .  .  .  .  .  .  .  
+			            4E 20 57 61 74 65 72 00 00 00 00 00 00 00 00 00 00 00 00 00 
+			   013D9E30 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  @  S  @  
+			            00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 40 53 40 
+
+

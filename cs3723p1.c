@@ -178,7 +178,7 @@ void smrcAssoc(
 
 Purpose:
     This function make one pointer FROM a particular node point TO 
-    another node and then taking care of any other previous associations
+    another node and then take care of any other previous associations
 Parameters:
     List each parameter on a separate line including data type name and 
     description.  Each item should begin with whether the parameter is passed 
@@ -223,8 +223,7 @@ void smrcAssoc(
 
 		/* is the attrname that was passed into this func the same as the attrname of the
 		 * particular attribute? if so is the attr also a pointer? */
-		if ( (strcmp(szAttrName, pAttr.szAttrName) == 0 ) &&
-                        pAttr.cDataType == 'P')
+		if ( (strcmp(szAttrName, pAttr.szAttrName) == 0 ))
 		{
 			psmResult->rc = 0;
 
@@ -238,20 +237,6 @@ void smrcAssoc(
 			memcpy(ppNew, &pUserDataTo, sizeof(ppNew));
 			pToAlloc->shRefCount++;
 		} 
-
-		/* is the attrname that was passed into this func NOT the same as the attrname of the
-		 * particular attribute OR is the attr NOT a pointer? */
-		else if ( (strcmp(szAttrName, pAttr.szAttrName) != 0 ) ||
-                        pAttr.cDataType != 'P') 
-		{
-
-			// set appropriate errors
-            printf("data type = %c\n", pAttr.cDataType);
-			psmResult->rc = RC_ASSOC_ATTR_NOT_PTR;
-			strcpy(
-		               psmResult->szErrorMessage,
-		               "This attribute is not a pointer.\n");	
-		}
 	}
 }
 
@@ -324,32 +309,32 @@ extern "C" void printNode(StorageManager *pMgr, void *pUserData)
     for(i = pMgr->nodeTypeM[pAlloc->shNodeType].shBeginMetaAttr;
         pMgr->metaAttrM[i].shNodeType == pAlloc->shNodeType; i++)
     {
-        MetaAttr n = pMgr->metaAttrM[i];
+        MetaAttr pAttr = pMgr->metaAttrM[i];
         
         /* check the data types. Print the data using the deferencing of 
          * their respective pointers. ( a double pointer in case of 
          * 'pointer' types */
-        switch(n.cDataType)
+        switch(pAttr.cDataType)
         {
             case 'P':
-                ppPtr = (char **)((char *)pUserData + n.shOffset);
+                ppPtr = (char **)((char *)pUserData + pAttr.shOffset);
                 printf(
-                    "\t\t%-10s\t%c\t%08lX\n", n.szAttrName, n.cDataType,
+                    "\t\t%-10s\t%c\t%08lX\n", pAttr.szAttrName, pAttr.cDataType,
                     ULAddr(*ppPtr));
                 break;
             case 'S':
-                szPtr = (char *)pUserData + n.shOffset;
-                printf("\t\t%-10s\t%c\t%s\n", n.szAttrName, n.cDataType, szPtr);
+                szPtr = (char *)pUserData + pAttr.shOffset;
+                printf("\t\t%-10s\t%c\t%s\n", pAttr.szAttrName, pAttr.cDataType, szPtr);
                 break;
             case 'I':
-                piPtr = (int *)((char *)pUserData + n.shOffset);
+                piPtr = (int *)((char *)pUserData + pAttr.shOffset);
                 printf(
-                    "\t\t%-10s\t%c\t%d\n", n.szAttrName, n.cDataType, *piPtr);
+                    "\t\t%-10s\t%c\t%d\n", pAttr.szAttrName, pAttr.cDataType, *piPtr);
                 break;
             case 'D':
-                pdPtr = (double *)((char *)pUserData + n.shOffset);
+                pdPtr = (double *)((char *)pUserData + pAttr.shOffset);
                 printf(
-                    "\t\t%-10s\t%c\t%f\n", n.szAttrName, n.cDataType, *pdPtr);
+                    "\t\t%-10s\t%c\t%f\n", pAttr.szAttrName, pAttr.cDataType, *pdPtr);
                 break;
         }
     }

@@ -15,13 +15,13 @@ p1: ${OBJ}
 	${CFLAGS} -o p1 ${OBJ}
 
 test1:
-	cat p1Input.txt | head -50 | p1
+	cat p1Input.txt | head -50 | ./p1
 
 testf:
-	cat p1Input.txt | p1
+	cat p1Input.txt | ./p1
 
 val:
-	cat p1Input.txt | valgrind p1
+	cat p1Input.txt | valgrind ./p1
 
 clean:
 	rm cs3723p1Driver.o hashApi.o cs3723p1.o p1
